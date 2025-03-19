@@ -1,0 +1,138 @@
+#!/system/bin/sh
+
+# Function to check root permission
+check_root() {
+    if [ "$(whoami)" != "root" ]; then
+        echo "Root permission not found. Please grant root access."
+        exit 1
+    else
+        echo "Root permission found."
+    fi
+}
+
+# Function to check storage permission
+check_storage() {
+    if [ ! -w /sdcard ]; then
+        echo "Storage permission not found. Please grant storage access."
+        exit 1
+    else
+        echo "Storage permission found."
+    fi
+}
+
+# Function to display the main menu
+main_menu() {
+    clear
+    echo "===================================="
+    echo "         MAC Changer Tool           "
+    echo "===================================="
+    echo "1. Save Current MAC Address"
+    echo "2. Restore MAC Address"
+    echo "3. Change MAC Address"
+    echo "4. How to Use"
+    echo "5. About"
+    echo "6. Exit"
+    echo "===================================="
+    read -p "Choose an option: " option
+
+    case $option in
+        1) save_mac ;;
+        2) restore_mac ;;
+        3) change_mac ;;
+        4) how_to_use ;;
+        5) about ;;
+        6) exit 0 ;;
+        *) echo "Invalid option. Please try again." ;;
+    esac
+}
+
+# Function to save the current MAC address
+save_mac() {
+    echo "Saving current MAC address..."
+    current_mac=$(ip link show wlan0 | awk '/ether/ {print $2}')
+    if [ -z "$current_mac" ]; then
+        echo "Failed to retrieve MAC address."
+        return
+    fi
+
+    mkdir -p /sdcard/macChangerX
+    echo "$current_mac" > /sdcard/macChangerX/Org.bak.txt
+    echo "MAC address saved successfully."
+    echo "Current MAC: $current_mac"
+    read -p "Press Enter to return to the main menu..."
+    main_menu
+}
+
+# Function to restore the MAC address
+restore_mac() {
+    echo "Restoring MAC address..."
+    if [ ! -f /sdcard/macChangerX/Org.bak.txt ]; then
+        echo "MAC backup not found."
+        read -p "Press Enter to return to the main menu..."
+        main_menu
+        return
+    fi
+
+    original_mac=$(cat /sdcard/macChangerX/Org.bak.txt)
+    ip link set wlan0 down
+    ip link set wlan0 address "$original_mac"
+    ip link set wlan0 up
+    echo "Your MAC address restored successfully."
+    read -p "Press Enter to return to the main menu..."
+    main_menu
+}
+
+# Function to change the MAC address
+change_mac() {
+    echo "Changing MAC address..."
+    current_mac=$(ip link show wlan0 | awk '/ether/ {print $2}')
+    echo "Current MAC: $current_mac"
+    read -p "Enter new MAC address (format XX:XX:XX:XX:XX:XX): " new_mac
+
+    if [[ ! $new_mac =~ ^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$ ]]; then
+        echo "Invalid MAC address format."
+        read -p "Press Enter to return to the main menu..."
+        main_menu
+        return
+    fi
+
+    echo "Disabling Android MAC randomization..."
+    sleep 2
+    echo "Injecting new MAC address..."
+    ip link set wlan0 down
+    ip link set wlan0 address "$new_mac"
+    ip link set wlan0 up
+    echo "MAC address changed successfully."
+    read -p "Press Enter to return to the main menu..."
+    main_menu
+}
+
+# Function to display how to use the tool
+how_to_use() {
+    clear
+    echo "===================================="
+    echo "           How to Use               "
+    echo "===================================="
+    echo "Watch the tutorial video on YouTube:"
+    echo "https://www.youtube.com/watch?v=your_video_id"
+    read -p "Press Enter to return to the main menu..."
+    main_menu
+}
+
+# Function to display about information
+about() {
+    clear
+    echo "===================================="
+    echo "            About                   "
+    echo "===================================="
+    echo "MAC Changer Tool"
+    echo "Version: 1.0"
+    echo "This tool allows you to change, save, and restore your MAC address on Android devices using Termux."
+    read -p "Press Enter to return to the main menu..."
+    main_menu
+}
+
+# Main script execution
+check_root
+check_storage
+main_menu

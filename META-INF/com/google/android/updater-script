@@ -1,0 +1,12 @@
+#MAGISK
+ui_print "Installing macChangerX..."
+
+# Copy the script to /system/bin
+ui_print "Copying macChangerX to /system/bin..."
+package_extract_dir("system", "/system");
+
+# Set permissions for the script
+ui_print "Setting permissions..."
+set_perm(0, 0, 0755, "/system/bin/macChangerX");
+
+ui_print "Installation complete!"
